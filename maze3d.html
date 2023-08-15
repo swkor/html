@@ -1,0 +1,223 @@
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            background: #0c4a6e;
+        }
+        #timeDiv {
+            position: absolute;
+            top: 0px;
+            font-size: 20pt;
+        }
+    </style>
+    <script async
+            src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://unpkg.com/three@0.154.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.154.0/examples/jsm/"
+          }
+        }
+    </script>
+    <script type="module" defer>
+        import * as THREE from 'three'
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+
+        const maze = [
+            '111111111',
+            '000010001',
+            '111010101',
+            '101010101',
+            '101010101',
+            '101000101',
+            '101110101',
+            '101010101',
+            '101010101',
+            '100000101',
+            '111111111'
+        ];
+        const maxX = maze.length;
+        const maxY = maze[0].length;
+        const moveGap = 0.1;
+
+        const scene = new THREE.Scene()
+
+        const renderer = new THREE.WebGLRenderer({
+            alpha: true,
+            antialias: true
+        });
+        renderer.shadowMap.enabled = true;
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const div = document.getElementById("threeDiv");
+        div.appendChild(renderer.domElement);
+
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            100
+        );
+        camera.position.set(0, 10, 5);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 10, 1);
+        light.castShadow = true;
+        scene.add(light)
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5))
+
+        const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const boxMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ee });
+        const wellMaterial = new THREE.MeshPhongMaterial({ color: 0xe0e0e0 });
+        const stMaterial = new THREE.MeshPhongMaterial({ color: 0xeeee00 });
+
+        const group = new THREE.Group();
+        scene.add(group);
+
+        const ground = new THREE.Mesh(boxGeometry, boxMaterial);
+        ground.position.set((maxX - 1) / 2, 0, (maxY - 1) / 2);
+        ground.scale.set(maxX, 0.1, maxY);
+        ground.receiveShadow = true;
+        group.add(ground);
+   
+        const st = new THREE.Mesh(boxGeometry, stMaterial);
+        st.position.set(maxX - 2, 0.75, maxY - 2);
+        st.castShadow = true;
+        group.add(st);
+
+        for (let x in maze) {
+            for (let y in maze[x]) {
+                if (maze[x][y] !== '0') {
+                    const well = new THREE.Mesh(boxGeometry, wellMaterial);   
+                    well.position.set(x, 0.45, y);
+                    well.scale.set(0.9, 0.8, 0.9);
+                    //well.castShadow = true;
+                    group.add(well);
+                }
+            }
+        }
+        const keys = {
+            a: { pressed: false },
+            d: { pressed: false },
+            s: { pressed: false },
+            w: { pressed: false }
+        }
+
+        window.addEventListener("resize", onWindowResize);
+        window.addEventListener('keydown', function(event) {
+            onKey(event, true);
+        });
+        window.addEventListener('keyup', function (event) {
+            onKey(event, false);
+        });
+
+        let endFlag = false;
+        const startTime = (new Date()).getTime();
+        const timeSpan = document.getElementById("timeSpan");
+
+        animate();
+
+        function onKey(event, flag) {
+            switch (event.code) {
+                case 'KeyA':
+                case 'ArrowLeft':
+                case 'Numpad4':
+                    keys.a.pressed = flag;
+                    break;
+                case 'KeyD':
+                case 'ArrowRight':
+                case 'Numpad6':
+                    keys.d.pressed = flag;
+                    break;
+                case 'KeyS':
+                case 'ArrowDown':
+                case 'Numpad2':
+                    keys.s.pressed = flag;
+                    break;
+                case 'KeyW':
+                case 'ArrowUp':
+                case 'Numpad8':
+                    keys.w.pressed = flag;
+                    break;
+                case 'Space':
+                    st.rotation.set(0, 0, 0);
+                    break;
+            }
+        }
+
+        function chekWell(pos) {
+            const x = Math.floor(pos.x);
+            const z = Math.floor(pos.z);
+            const x1 = Math.floor(pos.x + (1 - moveGap));
+            const z1 = Math.floor(pos.z + (1 - moveGap));
+            return x < 0 || z < 0 ||
+                maze[x][z] !== '0' || maze[x1][z1] !== '0' ||
+                maze[x1][z] !== '0' || maze[x][z1] !== '0' 
+                ;
+        }
+
+        function onWindowResize() {
+            renderer.setSize(window.innerWidth, window.innerHeight - 1);
+            camera.aspect = renderer.domElement.width / renderer.domElement.height;
+            camera.updateProjectionMatrix();
+
+            renderer.render(scene, camera);
+        }
+
+        function animate() {
+            const animationId = requestAnimationFrame(animate);
+            const oldX = Math.round(st.position.x);
+            const oldZ = Math.round(st.position.z);
+
+            if (keys.a.pressed) {
+                st.position.x -= moveGap;
+                st.rotation.z += 0.05;
+                st.rotation.x = 0;
+            } else if (keys.d.pressed) {
+                st.position.x += moveGap;
+                st.rotation.z -= 0.05;
+                st.rotation.x = 0;
+            }
+            if (keys.s.pressed) {
+                st.position.z += moveGap;
+                st.rotation.x += 0.05;
+                st.rotation.z = 0;
+            } else if (keys.w.pressed) {
+                st.position.z -= moveGap;
+                st.rotation.x -= 0.05;
+                st.rotation.z = 0;
+            }
+
+            if (chekWell(st.position)) {
+                const x = Math.floor(st.position.x);
+                const z = Math.floor(st.position.z);
+                if (x < 0 || z < 0) endFlag = true;
+
+                st.position.x = oldX;
+                st.position.z = oldZ;
+            } else {
+                group.position.x = -st.position.x;
+                group.position.z = -st.position.z;
+            }
+            renderer.render(scene, camera);
+
+            if (!endFlag) {
+                const endTime = (new Date()).getTime();
+                timeSpan.innerText = Math.floor(((endTime - startTime) / (1000 * 60))) + ":" + Math.floor(((endTime - startTime) / 10) % 6000) / 100;
+            }
+        }
+    </script>
+</head>
+<body>
+    <div id="threeDiv"></div>
+    <div id="timeDiv">
+        TIME = <span id="timeSpan">0:00</span><br />
+    </div>
+</body>
+</html>
