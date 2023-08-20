@@ -1,0 +1,294 @@
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            background: #0c4a6e;
+        }
+        #timeDiv {
+            position: absolute;
+            top: 0px;
+            font-size: 20pt;
+            color:white;
+        }
+    </style>
+    <script async
+            src="https://unpkg.com/es-module-shims/dist/es-module-shims.js"></script>
+
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://unpkg.com/three/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three/examples/jsm/"
+          }
+        }
+    </script>
+    <script type="module" defer>
+        import * as THREE from 'three'
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+        import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+
+        const brickTexture = new THREE.TextureLoader().load('./brick.png');
+        //brickTexture.colorSpace = THREE.SRGBColorSpace;
+
+        const moveGap = 0.1;
+        const stSize = 0.5;
+        const timeSpan = document.getElementById("timeSpan");
+        const lvSpan = document.getElementById("lvSpan");
+        let level = 0;
+        let max1 = 3;
+        let endFlag = false;
+        let maze;// = generateSquareMaze(max1);
+
+        const scene = new THREE.Scene();
+
+        const renderer = new THREE.WebGLRenderer({
+            alpha: true,
+            antialias: true
+        });
+        renderer.shadowMap.enabled = true;
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+        const div = document.getElementById("threeDiv");
+        div.appendChild(renderer.domElement);
+
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            100
+        );
+        camera.position.set(0, 4, 3);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 10, 1);
+        light.castShadow = true;
+        scene.add(light)
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5))
+
+        const boxGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const boxMaterial = new THREE.MeshPhongMaterial({ color: 0x0000ee });
+        const wellMaterial = new THREE.MeshPhongMaterial({ color: 0xe0e0e0 });
+        const stMaterial = new THREE.MeshPhongMaterial({ color: 0xeeee00 });
+
+        const group = new THREE.Group();
+        const well = new THREE.Group();
+
+        scene.add(group);
+        group.add(well);
+
+        const ground = new THREE.Mesh(boxGeometry, boxMaterial);
+        //ground.position.set((max1 - 1) / 2, 0, (max1 - 1) / 2);
+        //ground.scale.set(max1, 0.1, max1);
+        ground.receiveShadow = true;
+        group.add(ground);
+   
+        const st = new THREE.Mesh(boxGeometry, stMaterial);
+        //st.position.set(max1 - 2, 0.75, max1 - 2);
+        st.scale.set(stSize, stSize, stSize);
+        st.castShadow = true;
+        group.add(st);
+
+        init();
+
+        const keys = {
+            a: { pressed: false },
+            d: { pressed: false },
+            s: { pressed: false },
+            w: { pressed: false }
+        }
+
+        window.addEventListener("resize", onWindowResize);
+        window.addEventListener('keydown', function(event) {
+            onKey(event, true);
+        });
+        window.addEventListener('keyup', function (event) {
+            onKey(event, false);
+        });
+
+        const startTime = (new Date()).getTime();
+
+        animate();
+
+        function init() {
+            level++;
+            max1 += 2;
+            lvSpan.innerText = level;
+            st.position.set(max1 - 2, 0.75, max1 - 2);
+
+            for (let m = well.children.length - 1; m >= 0; m--) {
+                well.remove(well.children[m]);
+            }
+            maze = generateSquareMaze(max1);
+            generate_maze_mesh(maze);
+
+            ground.position.set((max1 - 1) / 2, 0, (max1 - 1) / 2);
+            ground.scale.set(max1, 0.1, max1);
+        }
+
+        function onKey(event, flag) {
+            switch (event.code) {
+                case 'KeyA':
+                case 'ArrowLeft':
+                case 'Numpad4':
+                    keys.a.pressed = flag;
+                    break;
+                case 'KeyD':
+                case 'ArrowRight':
+                case 'Numpad6':
+                    keys.d.pressed = flag;
+                    break;
+                case 'KeyS':
+                case 'ArrowDown':
+                case 'Numpad2':
+                    keys.s.pressed = flag;
+                    break;
+                case 'KeyW':
+                case 'ArrowUp':
+                case 'Numpad8':
+                    keys.w.pressed = flag;
+                    break;
+                case 'Space':
+                    st.rotation.set(0, 0, 0);
+                    break;
+            }
+        }
+
+        function chekWell(pos) {
+            const x = Math.floor(pos.x);
+            const z = Math.floor(pos.z);
+            const x1 = Math.floor(pos.x + (1 - moveGap));
+            const z1 = Math.floor(pos.z + (1 - moveGap));
+            return x < 0 || z < 0 ||
+                maze[x][z] || maze[x1][z1] ||
+                maze[x1][z] || maze[x][z1]
+                ;
+        }
+
+        function onWindowResize() {
+            renderer.setSize(window.innerWidth, window.innerHeight - 1);
+            camera.aspect = renderer.domElement.width / renderer.domElement.height;
+            camera.updateProjectionMatrix();
+
+            renderer.render(scene, camera);
+        }
+
+        function animate() {
+            const animationId = requestAnimationFrame(animate);
+            const oldX = Math.round(st.position.x);
+            const oldZ = Math.round(st.position.z);
+
+            if (keys.a.pressed) {
+                st.position.x -= moveGap;
+                st.rotation.z += 0.05;
+                st.rotation.x = 0;
+            } else if (keys.d.pressed) {
+                st.position.x += moveGap;
+                st.rotation.z -= 0.05;
+                st.rotation.x = 0;
+            }
+            if (keys.s.pressed) {
+                st.position.z += moveGap;
+                st.rotation.x += 0.05;
+                st.rotation.z = 0;
+            } else if (keys.w.pressed) {
+                st.position.z -= moveGap;
+                st.rotation.x -= 0.05;
+                st.rotation.z = 0;
+            }
+
+            if (chekWell(st.position)) {
+                const x = Math.floor(st.position.x);
+                const z = Math.floor(st.position.z);
+                st.position.x = oldX;
+                st.position.z = oldZ;
+                if (x < 0 || z < 0) {
+                    //endFlag = true;
+                    init();
+                }
+            } else {
+                group.position.x = -st.position.x;
+                group.position.z = -st.position.z;
+            }
+            renderer.render(scene, camera);
+
+            if (!endFlag) {
+                const endTime = (new Date()).getTime();
+                timeSpan.innerText = Math.floor(((endTime - startTime) / (1000 * 60))) + ":" + Math.floor(((endTime - startTime) / 10) % 6000) / 100;
+            }
+        }
+
+        function generate_maze_mesh(field) {
+            var mergedGeo = []; 
+            let material = new THREE.MeshPhongMaterial({ map: brickTexture });
+            for (let i = 0; i < field.length; i++) {
+                for (let j = 0; j < field[i].length; j++) {
+                    if (field[i][j]) {
+                        let geometry = new THREE.BoxGeometry(1, 1, 1);
+                        let mesh_ij = new THREE.Mesh(geometry, material);
+                        mesh_ij.position.x = i;
+                        mesh_ij.position.z = j;
+                        mesh_ij.position.y = 0.55;
+                        well.add(mesh_ij);
+                    }
+                }
+            }
+            return well;
+        }
+
+        function generateSquareMaze(dimension) {
+
+            function iterate(field, x, y) {
+                field[x][y] = false;
+                while (true) {
+                    var directions = [];
+                    if (x > 1 && field[x - 2][y] == true) {
+                        directions.push([-1, 0]);
+                    }
+                    if (x < field.dimension - 2 && field[x + 2][y] == true) {
+                        directions.push([1, 0]);
+                    }
+                    if (y > 1 && field[x][y - 2] == true) {
+                        directions.push([0, -1]);
+                    }
+                    if (y < field.dimension - 2 && field[x][y + 2] == true) {
+                        directions.push([0, 1]);
+                    }
+                    if (directions.length == 0) {
+                        return field;
+                    }
+                    var dir = directions[Math.floor(Math.random() * directions.length)];
+                    field[x + dir[0]][y + dir[1]] = false;
+                    field = iterate(field, x + dir[0] * 2, y + dir[1] * 2);
+                }
+            }
+
+            // Initialize the field.
+            let field = new Array(dimension);
+            field.dimension = dimension;
+            for (var i = 0; i < dimension; i++) {
+                field[i] = new Array(dimension);
+                for (var j = 0; j < dimension; j++) {
+                    field[i][j] = true;
+                }
+            }
+
+            // Gnerate the maze recursively.
+            field = iterate(field, 1, 1);
+            field[0][1] = false;
+            return field;
+
+        }
+    </script>
+</head>
+<body>
+    <div id="threeDiv"></div>
+    <div id="timeDiv">
+        TIME = <span id="timeSpan">0:00</span><br />
+        Level = <span id="lvSpan">1</span><br />
+    </div>
+</body>
+</html>
