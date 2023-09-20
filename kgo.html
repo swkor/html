@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    h1 {
+        width: 500px;
+        text-align: center;
+    }
+    button {
+      margin: 20px;
+    }
+    body {
+      margin: 0;
+    }
+    .board {
+      position: absolute;
+      top: 69px; 
+      left : 19px;
+      display: grid;
+      grid-template-columns: repeat(18, 1fr);
+      grid-template-rows: repeat(18, 1fr);
+      grid-column-gap: 0px;
+      grid-row-gap: 0px;
+      width: 360px;
+    }
+    .board div{
+      width: 20px;
+      height: 20px;
+      border: 1px solid black;
+      background: rgb(255, 180, 76);
+    }
+    .board2 {
+      position: absolute;
+      top: 59px; 
+      left : 9px;
+      display: grid;
+      grid-template-columns: repeat(19, 1fr);
+      grid-template-rows: repeat(19, 1fr);
+      grid-column-gap: 0px;
+      grid-row-gap: 0px;
+      width: 380px;
+    }
+    .board2 div{
+      width: 20px;
+      height: 20px;
+      border: 1px solid transparent;
+      background: rgb(255, 180, 76, 0.2);
+      
+    }
+    .board2 div.s1 {
+      background: black;
+      border-radius: 50%;
+    }
+    .board2 div.s2 {
+      background: white;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body style="background: #fff0db">
+    <h1>&nbsp; [ 오 목 ] <button>리셋</button></h1>
+    
+    <div>
+        <div class="board">
+        </div>
+        <div class="board2">
+       </div>
+    </div>
+  <script>
+    // var arr = Array(19).fill(0).map(x => Array(19).fill(0))
+    let arr = Array(19 * 19).fill(0)
+    const board = document.querySelector('.board');
+    const board2 = document.querySelector('.board2');
+
+    function drawboard(board2) {
+        // url에 뭐가 있으면
+        const urlParams = new URLSearchParams(window.location.search);
+        const myParam = urlParams.get('a');
+        board2.innerHTML = '';
+        if (myParam != null) {
+        let param = JSON.parse(atob(myParam));
+        arr = [...param]
+        for (let i = 0; i < 19 * 19; i++) {
+            board2.insertAdjacentHTML('beforeend',`<div data-id="${i}" class="s${arr[i]}"></div>`)
+        }
+
+        //url에 뭐가 없으면
+        } else {
+        for (let i = 0; i < 19 * 19; i++) {
+            board2.insertAdjacentHTML('beforeend',`<div data-id="${i}"></div>`)
+        }
+        }
+    }
+
+
+    for (let i = 0; i < 18 * 18; i++) {
+        board.insertAdjacentHTML('beforeend',`<div></div>`)
+    }
+
+
+    //로드시 url 가져오기 
+    drawboard(board2) ;
+
+    board2.addEventListener('click', function(e){
+      const target = e.target;
+      const targetclass = target.classList;
+      if (target != board2){
+        if (targetclass.contains('s2')) {
+            targetclass.remove('s2')
+            arr[target.dataset.id] = 0
+        } else if (targetclass.contains('s1')) {
+            targetclass.replace('s1', 's2')
+            arr[target.dataset.id] = 2
+        } else {
+            targetclass.add('s1')
+            arr[target.dataset.id] = 1
+        }
+
+        //save to url
+        let save = btoa(JSON.stringify(arr));
+        window.history.pushState({}, null, '?a=' + save);
+      }
+    })
+
+    // reset
+    document.querySelector('button').addEventListener('click', function(e){
+      arr = Array(19 * 19).fill(0);
+      let save = btoa(JSON.stringify(arr));
+      window.history.pushState({}, null, '?a=' + save);
+      drawboard(board2);
+    })
+    
+    // 뒤로가기 누를 때 url에 있는거 가져와서 또 그리기 
+    window.addEventListener('popstate', function(e) {
+      drawboard(board2);
+    })
+  </script>
+</body>
+</html>
