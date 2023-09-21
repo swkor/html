@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<title>Native Toast Examples</title>
+<style>
+html { font-size: 16px; }
+
+body {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  font-family: 'Roboto';
+  background-color:#fafafa;
+}
+
+.main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-top: 120px;
+  flex-direction: column;
+}
+
+.buttons { max-width: 600px; }
+
+.buttons > div {
+  padding: 20px;
+  margin-bottom: 20px;
+  background-color: #ddd;
+  box-shadow: 0 2px 5px #ccc;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.buttons .buttons-right { }
+
+.md-button {
+  background: #3f51b5;
+  border: none;
+  border-radius: 2px;
+  color: #fff;
+  position: relative;
+  height: 36px;
+  margin: 0;
+  padding: 0 16px;
+  display: inline-block;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  overflow: hidden;
+  will-change: box-shadow;
+  transition: box-shadow .2s cubic-bezier(.4, 0, 1, 1), background-color .2s cubic-bezier(.4, 0, .2, 1), color .2s cubic-bezier(.4, 0, .2, 1);
+  outline: none;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  line-height: 36px;
+  vertical-align: middle;
+  box-shadow: 0 2px 2px 0 rgba(0,0,0,.14), 0 3px 1px -2px rgba(0,0,0,.2), 0 1px 5px 0 rgba(0,0,0,.12);
+}
+
+.click-button {
+  display: block;
+  margin: 0 auto;
+}
+
+.click-button:not(:last-child) { margin-bottom: 20px; }
+
+.site-name {
+  color: black;
+  font-weight: 400;
+  font-size: 2.4rem;
+  margin: 0;
+  margin-bottom: 30px;
+}
+
+.control { margin-bottom: 20px; }
+
+.control label { display: block; }
+</style>
+<style>
+    .native-toast {
+  position: fixed;
+  background-color: rgba(50, 50, 50, .8);
+  border-radius: 33px;
+  color: white;
+  left: 50%;
+  text-align: center;
+  padding: 10px 20px;
+  opacity: 0;
+  z-index: 99999;
+  transition: transform .25s, opacity .25s, top .25s;
+  box-sizing: border-box;
+}
+
+.native-toast-bottom {
+  bottom: 50px;
+  -ms-transform: translateX(-50%) translateY(50px);
+      transform: translateX(-50%) translateY(50px)
+}
+
+.native-toast-bottom.native-toast-shown {
+  opacity: 1;
+  -ms-transform: translateX(-50%) translateY(0);
+      transform: translateX(-50%) translateY(0);
+}
+
+.native-toast-bottom.native-toast-edge {
+  bottom: 0;
+}
+
+.native-toast-top {
+  top: 50px;
+  -ms-transform: translateX(-50%) translateY(-50px);
+      transform: translateX(-50%) translateY(-50px)
+}
+
+.native-toast-top.native-toast-shown {
+  opacity: 1;
+  -ms-transform: translateX(-50%) translateY(0);
+      transform: translateX(-50%) translateY(0);
+}
+
+.native-toast-top.native-toast-edge {
+  top: 0;
+}
+
+.native-toast-center {
+  top: 0;
+  -ms-transform: translateX(-50%) translateY(-50px);
+      transform: translateX(-50%) translateY(-50px)
+}
+
+.native-toast-center.native-toast-shown {
+  opacity: 1;
+  top: 50%;
+  -ms-transform: translateX(-50%) translateY(-50%);
+      transform: translateX(-50%) translateY(-50%);
+}
+
+.native-toast-edge {
+  border-radius: 0;
+  width: 100%;
+  text-align: left;
+}
+
+@media screen and (min-width: 40rem) {
+  .native-toast:not(.native-toast-edge) {
+    max-width: 18rem;
+  }
+}
+
+/*
+  max-width does not seem to work in small screen?
+*/
+
+/*@media screen and (max-width: 768px) {
+  .native-toast:not(.native-toast-edge) {
+    max-width: 400px;
+  }
+}
+
+@media screen and (max-width: 468px) {
+  .native-toast:not(.native-toast-edge) {
+    max-width: 300px;
+  }
+}*/
+
+/* types */
+
+.native-toast-error {
+  background-color: #d92727;
+  color: white;
+}
+
+.native-toast-success {
+  background-color: #62a465;
+  color: white;
+}
+
+.native-toast-warning {
+  background-color: #fdaf17;
+  color: white;
+}
+
+.native-toast-info {
+  background-color: #5060ba;
+  color: white;
+}
+
+[class^="native-toast-icon-"] {
+  vertical-align: middle;
+  margin-right: 8px
+}
+
+[class^="native-toast-icon-"] svg {
+  width: 16px;
+  height: 16px;
+}
+</style>
+<script>
+    (function (global, factory) {
+        typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+        typeof define === 'function' && define.amd ? define(factory) :
+        (global.nativeToast = factory());
+    }(this, (function () { 'use strict';
+    
+    /*
+    object-assign
+    (c) Sindre Sorhus
+    @license MIT
+    */
+    
+    /* eslint-disable no-unused-vars */
+    var getOwnPropertySymbols = Object.getOwnPropertySymbols;
+    var hasOwnProperty = Object.prototype.hasOwnProperty;
+    var propIsEnumerable = Object.prototype.propertyIsEnumerable;
+    
+    function toObject(val) {
+        if (val === null || val === undefined) {
+            throw new TypeError('Object.assign cannot be called with null or undefined');
+        }
+    
+        return Object(val);
+    }
+    
+    function shouldUseNative() {
+        try {
+            if (!Object.assign) {
+                return false;
+            }
+    
+            // Detect buggy property enumeration order in older V8 versions.
+    
+            // https://bugs.chromium.org/p/v8/issues/detail?id=4118
+            var test1 = new String('abc');  // eslint-disable-line no-new-wrappers
+            test1[5] = 'de';
+            if (Object.getOwnPropertyNames(test1)[0] === '5') {
+                return false;
+            }
+    
+            // https://bugs.chromium.org/p/v8/issues/detail?id=3056
+            var test2 = {};
+            for (var i = 0; i < 10; i++) {
+                test2['_' + String.fromCharCode(i)] = i;
+            }
+            var order2 = Object.getOwnPropertyNames(test2).map(function (n) {
+                return test2[n];
+            });
+            if (order2.join('') !== '0123456789') {
+                return false;
+            }
+    
+            // https://bugs.chromium.org/p/v8/issues/detail?id=3056
+            var test3 = {};
+            'abcdefghijklmnopqrst'.split('').forEach(function (letter) {
+                test3[letter] = letter;
+            });
+            if (Object.keys(Object.assign({}, test3)).join('') !==
+                    'abcdefghijklmnopqrst') {
+                return false;
+            }
+    
+            return true;
+        } catch (err) {
+            // We don't expect any of the above to throw, but better to be safe.
+            return false;
+        }
+    }
+    
+    var index = shouldUseNative() ? Object.assign : function (target, source) {
+        var arguments$1 = arguments;
+    
+        var from;
+        var to = toObject(target);
+        var symbols;
+    
+        for (var s = 1; s < arguments.length; s++) {
+            from = Object(arguments$1[s]);
+    
+            for (var key in from) {
+                if (hasOwnProperty.call(from, key)) {
+                    to[key] = from[key];
+                }
+            }
+    
+            if (getOwnPropertySymbols) {
+                symbols = getOwnPropertySymbols(from);
+                for (var i = 0; i < symbols.length; i++) {
+                    if (propIsEnumerable.call(from, symbols[i])) {
+                        to[symbols[i]] = from[symbols[i]];
+                    }
+                }
+            }
+        }
+    
+        return to;
+    };
+    
+    var prevToast = null;
+    
+    var icons = {
+      warning: "<svg viewBox=\"0 0 32 32\" width=\"32\" height=\"32\" fill=\"none\" stroke=\"currentcolor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"6.25%\"><path d=\"M8 17 C8 12 9 6 16 6 23 6 24 12 24 17 24 22 27 25 27 25 L5 25 C5 25 8 22 8 17 Z M20 25 C20 25 20 29 16 29 12 29 12 25 12 25 M16 3 L16 6\" /></svg>",
+      success: "<svg viewBox=\"0 0 32 32\" width=\"32\" height=\"32\" fill=\"none\" stroke=\"currentcolor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"6.25%\"><path d=\"M2 20 L12 28 30 4\" /></svg>",
+      info: "<svg viewBox=\"0 0 32 32\" width=\"32\" height=\"32\" fill=\"none\" stroke=\"currentcolor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"6.25%\"><path d=\"M16 14 L16 23 M16 8 L16 10\" /><circle cx=\"16\" cy=\"16\" r=\"14\" /></svg>",
+      error: "<svg viewBox=\"0 0 32 32\" width=\"32\" height=\"32\" fill=\"none\" stroke=\"currentcolor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"6.25%\"><path d=\"M16 3 L30 29 2 29 Z M16 11 L16 19 M16 23 L16 25\" /></svg>"
+    };
+    
+    var Toast = function Toast(ref) {
+      if ( ref === void 0 ) ref = {};
+      var message = ref.message; if ( message === void 0 ) message = '';
+      var position = ref.position; if ( position === void 0 ) position = 'bottom';
+      var timeout = ref.timeout; if ( timeout === void 0 ) timeout = 3000;
+      var el = ref.el; if ( el === void 0 ) el = document.body;
+      var square = ref.square; if ( square === void 0 ) square = false;
+      var type = ref.type; if ( type === void 0 ) type = '';
+      var debug = ref.debug; if ( debug === void 0 ) debug = false;
+      var edge = ref.edge; if ( edge === void 0 ) edge = false;
+    
+      if (prevToast) {
+        prevToast.destroy();
+      }
+    
+      this.message = message;
+      this.position = position;
+      this.el = el;
+      this.timeout = timeout;
+    
+      this.toast = document.createElement('div');
+      this.toast.className = "native-toast native-toast-" + (this.position);
+    
+      if (type) {
+        this.toast.className += " native-toast-" + type;
+        this.message = "<span class=\"native-toast-icon-" + type + "\">" + (icons[type] || '') + "</span>" + (this.message);
+      }
+    
+      this.toast.innerHTML = this.message;
+    
+      if (edge) {
+        this.toast.className += ' native-toast-edge';
+      }
+    
+      if (square) {
+        this.toast.style.borderRadius = '3px';
+      }
+    
+      this.el.appendChild(this.toast);
+    
+      prevToast = this;
+    
+      this.show();
+      if (!debug) {
+        this.hide();
+      }
+    };
+    
+    Toast.prototype.show = function show () {
+        var this$1 = this;
+    
+      setTimeout(function () {
+        this$1.toast.classList.add('native-toast-shown');
+      }, 300);
+    };
+    
+    Toast.prototype.hide = function hide () {
+        var this$1 = this;
+    
+      setTimeout(function () {
+        this$1.destroy();
+      }, this.timeout);
+    };
+    
+    Toast.prototype.destroy = function destroy () {
+        var this$1 = this;
+    
+      if (!this.toast) { return }
+    
+      this.toast.classList.remove('native-toast-shown');
+    
+      setTimeout(function () {
+        if (this$1.toast) {
+          this$1.el.removeChild(this$1.toast);
+          this$1.toast = null;
+        }
+      }, 300);
+    };
+    
+    function toast(options) {
+      return new Toast(options)
+    }
+    
+    var loop = function () {
+      var type = list[i];
+    
+      toast[type] = function (options) { return toast(index({}, {type: type}, options)); };
+    };
+    
+    for (var i = 0, list = ['success', 'info', 'warning', 'error']; i < list.length; i += 1) loop();
+    
+    return toast;
+    
+    })));
+    </script> 
+    </head>
+<body>
+<div class="main">
+  <h1 class="site-name">Native Toast Examples</h1>
+  <div class="control">
+    <label>
+      <input type="checkbox" id="switch-edge-mode">
+      Edge mode (Notification Bars)</label>
+    <label>
+      <input type="checkbox" id="switch-debug-mode">
+      debug mode (do not self-destruct)</label>
+  </div>
+  <div class="buttons">
+    <div class="buttons-group">
+      <button onclick="fromTop()" class="md-button click-button">Toast Top</button>
+      <button onclick="fromCenter()" class="md-button click-button">Toast Center</button>
+      <button onclick="fromBottom()" class="md-button click-button">Toast Bottom</button>
+      <button onclick="squared()" class="md-button click-button">Squared Toast</button>
+    </div>
+    <div class="buttons-group">
+      <button onclick="error()" class="md-button click-button">Error</button>
+      <button onclick="warning()" class="md-button click-button">Warning</button>
+      <button onclick="success()" class="md-button click-button">Success</button>
+      <button onclick="info()" class="md-button click-button">Info</button>
+    </div>
+  </div>
+</div>
+<script>
+var useEdge = false
+var useDebug = false
+function fromTop() {
+  nativeToast({
+    message: 'No more posts',
+    position: 'top',
+    edge: useEdge,
+    debug: useDebug
+  })
+}
+function fromBottom() {
+  nativeToast({
+    message: 'No more posts',
+    edge: useEdge,
+    debug: useDebug
+  })
+}
+function fromCenter() {
+  nativeToast({
+    message: 'No more posts',
+    position: 'center',
+    edge: useEdge,
+    debug: useDebug
+  })
+}
+function squared() {
+  nativeToast({
+    message: 'No more posts',
+    square: true,
+    edge: useEdge,
+    debug: useDebug
+  })
+}
+function error() {
+  nativeToast({
+    message: 'Something bad happened!',
+    type: 'error',
+    edge: useEdge,
+    debug: useDebug
+  })
+}
+function info() {
+  nativeToast({
+    message: 'Some information!',
+    type: 'info',
+    edge: useEdge,
+    debug: useDebug
+  })
+}
+function warning() {
+  nativeToast.warning({
+    message: 'Something warning!',
+    edge: useEdge,
+    debug: useDebug
+  })
+}
+function success() {
+  nativeToast({
+    message: 'Success message!',
+    type: 'success',
+    edge: useEdge,
+    debug: useDebug
+  })
+}
+function edge() {
+  nativeToast({
+    message: 'Bottom edge!',
+    edge: useEdge,
+    debug: useDebug
+  })
+}
+document.getElementById('switch-edge-mode').addEventListener('change', function (e) {
+  useEdge = e.target.checked
+})
+document.getElementById('switch-debug-mode').addEventListener('change', function (e) {
+  useDebug = e.target.checked
+})</script>
+</body>
+</html>
