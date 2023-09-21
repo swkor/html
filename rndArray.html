@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script>
+        function FillNumber(num) {
+            return new Array(num).fill().map((v,i) => i + 1);
+        }
+        function SelectRandom(array, num) {
+            let v = array.slice();
+            let rtn = [];
+            for(let ix = 0; ix < num; ix++) {
+                let r = Math.floor(Math.random() * v.length);
+                rtn.push(v.splice(r,1)[0]);
+            }
+            return rtn;
+        }
+        function viewArray(tag, array){
+            for(let v of array) {
+                tag.insertAdjacentHTML("beforebegin",`<span>${v}</span> `);
+            }
+        }
+
+    </script>
+</head>
+<body>
+    값을 채우고 램덤 선택
+    <div id="ball"></div>
+    <div id="lotto"></div>
+    <div id="card"></div>
+    <script>
+        let ball = FillNumber(9);
+        let lotto = FillNumber(45);
+        let card = [];
+        for(let n of ['A','2','3','4','5','6','7','8','9','10','J','Q','K'])
+            for(let k of ['♠','◆','♥','♣'])
+                card.push(k + n);
+        let selectBall = SelectRandom(ball, 4);
+        let selectLotto = SelectRandom(lotto, 7).sort((a,b)=>a-b);
+        let selectCard = SelectRandom(card, card.length);
+        viewArray(document.querySelector('#ball'), selectBall);
+        viewArray(document.querySelector('#lotto'), selectLotto);
+        viewArray(document.querySelector('#card'), selectCard);
+    </script>
+</body>
+</html>
