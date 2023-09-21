@@ -1,0 +1,23 @@
+// 1초에 한번 호출되는 타이머
+setInterval(()=>{
+    const now = new Date();
+
+    const h = now.getHours(); // 시간 (0~23)
+    const m = now.getMinutes(); // 분 (0~59)
+    const s = now.getSeconds(); // 초 (0~59)
+
+    // 시계 바늘 각도
+    const degH = h * (360/12) + m * (360/12/60);
+    const degM = m * (360/60);
+    const degS = s * (360/60);
+
+    // div를 가져와서
+    const elementH = document.querySelector('.lineHour');
+    const elementM = document.querySelector('.lineMin');
+    const elementS = document.querySelector('.lineSec');
+
+    // 각도 조절
+    elementH.style.transform = `rotate(${degH}deg)`;
+    elementM.style.transform = `rotate(${degM}deg)`;
+    elementS.style.transform = `rotate(${degS}deg)`;
+},1000);
