@@ -1,0 +1,434 @@
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+
+    <title>Smooth Snackbar & Toast Notification Demos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <style>
+        body {
+          font-family: 'Roboto', Tahoma, Geneva, Verdana, sans-serif;
+          background-color: #f7f7f7;
+      }
+
+      .field {
+          display: inline-block;
+          margin-bottom: 3px;
+      }
+  </style>
+  <style>
+.js-snackbar-container {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    max-width: 100%;
+    padding: 10px;
+    overflow: hidden;
+}
+
+.js-snackbar-container * {
+    box-sizing: border-box;
+}
+
+.js-snackbar__wrapper {
+    overflow: hidden;
+    height: auto;
+    margin: 5px 0;
+    transition: all ease .5s;
+    border-radius: 3px;
+    box-shadow: 0 0 4px 0 black;
+}
+
+.js-snackbar {
+    display: inline-flex;
+    box-sizing: border-box;
+    border-radius: 3px;
+    color: #eee;
+    font-size: 16px;
+    background-color: #262626;
+    vertical-align: bottom;
+}
+
+.js-snackbar__close,
+.js-snackbar__status,
+.js-snackbar__message {
+    position: relative;
+}
+
+.js-snackbar__message {
+    padding: 12px;
+}
+
+.js-snackbar__status {
+    display: none;
+    width: 15px;
+    margin-right: 5px;
+    border-radius: 3px 0 0 3px;
+    background-color: transparent;
+}
+
+ .js-snackbar__status.js-snackbar--success,
+ .js-snackbar__status.js-snackbar--warning,
+ .js-snackbar__status.js-snackbar--danger,
+ .js-snackbar__status.js-snackbar--info {
+    display: block;
+}
+
+.js-snackbar__status.js-snackbar--success  {
+    background-color: #4caf50;
+}
+
+.js-snackbar__status.js-snackbar--warning  {
+    background-color: #ff9800;
+}
+
+ .js-snackbar__status.js-snackbar--danger {
+    background-color: #b90909;
+}
+
+ .js-snackbar__status.js-snackbar--info {
+    background-color: #2196f3;
+}
+
+.js-snackbar__close {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    user-select: none;
+}
+
+.js-snackbar__close:hover {
+    background-color: #444;
+}
+  </style>
+  <script>
+    function SnackBar(userOptions) {
+        var snackbar = this;
+        var _Interval;
+        var _Message;
+        var _Element;
+        var _Container;
+        
+        
+        var _OptionDefaults = {
+            message: "Operation performed successfully.",
+            dismissible: true,
+            timeout: 5000,
+            status: ""
+        }
+        var _Options = _OptionDefaults;
+
+        function _Create() {
+            _Container = document.getElementsByClassName("js-snackbar-container")[0];
+
+            if (!_Container) {
+                // need to create a new container for notifications
+                _Container = document.createElement("div");
+                _Container.classList.add("js-snackbar-container");
+
+                document.body.appendChild(_Container);
+            }
+            _Element = document.createElement("div");
+            _Element.classList.add("js-snackbar__wrapper");
+
+            let innerSnack = document.createElement("div");
+            innerSnack.classList.add("js-snackbar", "js-snackbar--show");
+        
+            if (_Options.status) {
+                _Options.status = _Options.status.toLowerCase().trim();
+
+                let status = document.createElement("span");
+                status.classList.add("js-snackbar__status");
+
+
+                if (_Options.status === "success" || _Options.status === "green") {
+                    status.classList.add("js-snackbar--success");
+                }
+                else if (_Options.status === "warning" || _Options.status === "alert" || _Options.status === "orange") {
+                    status.classList.add("js-snackbar--warning");
+                }
+                else if (_Options.status === "danger" || _Options.status === "error" || _Options.status === "red") {
+                    status.classList.add("js-snackbar--danger");
+                }
+                else {
+                    status.classList.add("js-snackbar--info");
+                }
+
+                innerSnack.appendChild(status);
+            }
+            
+            _Message = document.createElement("span");
+            _Message.classList.add("js-snackbar__message");
+            _Message.textContent = _Options.message;
+
+            innerSnack.appendChild(_Message);
+
+            if (_Options.dismissible) {
+                let closeBtn = document.createElement("span");
+                closeBtn.classList.add("js-snackbar__close");
+                closeBtn.innerText = "\u00D7";
+
+                closeBtn.onclick = Close;
+
+                innerSnack.appendChild(closeBtn);
+            }
+
+            _Element.style.height = "0px";
+            _Element.style.opacity = "0";
+            _Element.style.marginTop = "0px";
+            _Element.style.marginBottom = "0px";
+
+            _Element.appendChild(innerSnack);
+            _Container.appendChild(_Element);
+
+            if (_Options.timeout !== false) {
+                _Interval = setTimeout(Close, _Options.timeout);
+            }
+        }
+
+        var _ConfigureDefaults = function() {
+            // if no options given, revert to default
+            if (userOptions === undefined) {
+                return;
+            }
+
+            if (userOptions.message !== undefined) {
+                _Options.message = userOptions.message;
+            }
+
+            if (userOptions.dismissible !== undefined) {
+                if (typeof (userOptions.dismissible) === "string") {
+                    _Options.dismissible = (userOptions.dismissible === "true");
+                }
+                else if (typeof (userOptions.dismissible) === "boolean") {
+                    _Options.dismissible = userOptions.dismissible;
+                }
+                else {
+                    console.debug("Invalid option provided for 'dismissable' [" + userOptions.dismissible + "] is of type " + (typeof userOptions.dismissible));
+                }
+            }
+
+
+            if (userOptions.timeout !== undefined) {
+                if (typeof (userOptions.timeout) === "boolean" && userOptions.timeout === false) {
+                    _Options.timeout = false;
+                }
+                else if (typeof (userOptions.timeout) === "string") {
+                    _Options.timeout = parseInt(userOptions.timeout);
+                }
+
+
+                if (typeof (userOptions.timeout) === "number") {
+                    if (userOptions.timeout === Infinity) {
+                        _Options.timeout = false;
+                    }
+                    else if (userOptions.timeout >= 0) {
+                        _Options.timeout = userOptions.timeout;
+                    }
+                    else {
+                        console.debug("Invalid timeout entered. Must be greater than or equal to 0.");
+                    }
+
+                    _Options.timeout = userOptions.timeout;
+                }
+
+                
+            }
+
+            if (userOptions.status !== undefined) {
+                _Options.status = userOptions.status;
+            }
+        }
+
+        this.Open = function() {
+            let contentHeight = _Element.firstElementChild.scrollHeight; // get the height of the content
+
+            _Element.style.height = contentHeight + "px";
+            _Element.style.opacity = 1;
+            _Element.style.marginTop = "5px";
+            _Element.style.marginBottom = "5px";
+
+            _Element.addEventListener("transitioned", function() {
+                _Element.removeEventListener("transitioned", arguments.callee);
+                _Element.style.height = null;
+            })
+        }
+
+        this.Close = function () {
+            if (_Interval)
+                clearInterval(_Interval);
+
+            let snackbarHeight = _Element.scrollHeight; // get the auto height as a px value
+            let snackbarTransitions = _Element.style.transition;
+            _Element.style.transition = "";
+
+            requestAnimationFrame(function() {
+                _Element.style.height = snackbarHeight + "px"; // set the auto height to the px height
+                _Element.style.opacity = 1;
+                _Element.style.marginTop = "0px";
+                _Element.style.marginBottom = "0px";
+                _Element.style.transition = snackbarTransitions
+
+                requestAnimationFrame(function() {
+                    _Element.style.height = "0px";
+                    _Element.style.opacity = 0;
+                })
+            });
+
+            setTimeout(function() {
+                _Container.removeChild(_Element);
+            }, 1000);
+        };
+
+        _ConfigureDefaults();
+        _Create();
+        Open();
+    }
+  </script>
+</head>
+
+<body>
+    <h1>Smooth Snackbar & Toast Notification Demos</h1>
+    <div>
+        <h2>Context Colors</h2>
+        <button type="button" onclick="def();">Default</button>
+        <button type="button" onclick="success();">Success</button>
+        <button type="button" onclick="demoError();">Error</button>
+        <button type="button" onclick="demoWarning();">Warning</button>
+        <button type="button" onclick="demoInfo();">Info</button>
+    </div>
+
+    <div>
+        <h2>Options</h2>
+        <button type="button" onclick="demoTimeout();">Timeout Duration</button>
+        <button type="button" onclick="demoNoTimeout();">No Timeout</button>
+        <button type="button" onclick="demoNoDissmiss();">Undismissible</button>
+    </div>
+
+    <div>
+        <h2>Custom</h2>
+
+        <form>
+            <div class="field">
+                <label>Message</label>
+                <input id=demo_text type=text value="Hello World!" />
+            </div>
+            <br />
+
+            <div class="field">
+                <label for=demo_dismiss><input type=checkbox id=demo_dismiss name=demo_dismiss checked />Dissimissible</label>
+
+            </div>
+            <br />
+
+            <div class="field">
+                <label>Status</label>
+                <select id="demo_status">
+                    <option value="" selected>Default</option>
+                    <option value=error>Error</option>
+                    <option value=success>Success</option>
+                    <option value=warning>Warning</option>
+                    <option value=info>Info</option>
+                </select>
+            </div>
+            <br />
+
+            <div class="field">
+                <label>Timeout</label>
+                <input id=demo_timeout type=number min=0 value=5000 />
+                <div style="text-align: right;">
+                    <label for="demo_notimeout">
+                        <input type="checkbox" id=demo_notimeout name=demo_notimeout />No Timeout
+                    </label>
+                </div>
+
+            </div>
+
+            <br />
+            <button type=button onclick="return demoCustom();">Snackbar!</button>
+        </form>
+
+    </div>
+
+    <script>
+        var success = function () {
+            console.debug("testing success");
+            var message = SnackBar({
+                message: "Snackbar created successfully!",
+                status: "success"
+            });
+        };
+
+        var def = function () {
+            let def = SnackBar({
+                message: "Hello World!"
+            })
+        };
+
+        var demoError = function () {
+            let demoErrElem = SnackBar({
+                message: "Could not do the thing!",
+                status: "danger"
+            })
+        }
+
+        var demoWarning = function () {
+            SnackBar({
+                message: "Alert! Something is happening that you may not expect!",
+                status: "warning"
+            })
+        }
+
+        var demoInfo = function () {
+            SnackBar({
+                message: "Here's some information for you",
+                status: "info"
+            })
+        }
+
+        var demoTimeout = function () {
+            SnackBar({
+                message: "I hang out for a little longer",
+                timeout: 25000
+            })
+        }
+
+        var demoNoTimeout = function () {
+            SnackBar({
+                message: "You need to manually send me away",
+                timeout: false
+            })
+        }
+
+        var demoNoDissmiss = function () {
+            SnackBar({
+                message: "You cannot send me away!",
+                dismissible: false
+            })
+        }
+
+        function demoCustom() {
+            let timeout = document.getElementById("demo_timeout").value;
+
+            if (document.getElementById("demo_notimeout").checked) {
+                timeout = false;
+            }
+
+            SnackBar({
+                message: document.getElementById("demo_text").value,
+                dismissible: document.getElementById("demo_dismiss").checked,
+                status: document.getElementById("demo_status").value,
+                timeout: timeout
+            });
+
+            return false;
+        }
+    </script>
+</body>
+</html>
