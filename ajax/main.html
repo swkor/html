@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Main</title>
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+  <style>
+   </style>
+  <script src="js/script.js"></script>
+  <script>
+    function act(e) {
+      let act = ajaxInit("", (data) => {
+        console.dir(data);
+        location.reload(true);
+        //dis.innerHTML = data.result;
+      });
+      act({'act':'logout'});
+    }
+    function list(e) {
+      let act = ajaxInit("", (data) => {
+        viewTable(tbl1, data.result);
+      });
+      act({'act':'list'});
+    }
+    function viewTable(tag, data) {
+    }
+  </script>
+</head>
+<body>
+  <button id="log" onclick="return act()">LogOut</button>
+  <button id="list" onclick="return list()">List</button>
+  <input id="dis">
+  <div id="editor" contenteditable="true">https://dev-bak.tistory.com/16</div>
+  <div id="loading" style="display:none">
+    <img src="img/loading.png" class="pop-img">
+  </div>
+</body>
+</html>
